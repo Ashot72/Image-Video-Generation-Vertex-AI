@@ -1,0 +1,21 @@
+[
+  {
+    "id": 1765728171891,
+    "prompts": [
+      "Generate New York buildings and a road."
+    ],
+    "videoPrompts": [
+      "Include aliens walking along the street"
+    ]
+  },
+  {
+    "id": 1765728210835,
+    "prompts": [
+      "Generate Mount Ararat form the Armenian side.",
+      "Add birds flying in front of the mountain."
+    ],
+    "videoPrompts": [
+      "Generate a video"
+    ]
+  }
+]

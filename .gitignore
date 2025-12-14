@@ -17,5 +17,5 @@ dist/
 !texts/
 
 # Ignore metadata.json
-outputs/metadata.json
+!outputs/metadata.json
 
