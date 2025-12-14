@@ -1,0 +1,1557 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Image and Video Generation - Vertex AI Imagen and Veo</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+                    Cantarell, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 20px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                overflow: hidden;
+            }
+
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+            }
+
+            .header p {
+                opacity: 0.9;
+                font-size: 1.1em;
+            }
+
+            .content {
+                padding: 40px;
+            }
+
+            .upload-section {
+                margin-bottom: 30px;
+            }
+
+            .upload-section h2 {
+                color: #667eea;
+                margin-bottom: 15px;
+                font-size: 1.5em;
+            }
+
+            .upload-area {
+                border: 3px dashed #667eea;
+                border-radius: 15px;
+                padding: 40px;
+                text-align: center;
+                background: #f8f9fa;
+                transition: all 0.3s ease;
+                cursor: pointer;
+                position: relative;
+            }
+
+            .upload-area:hover {
+                border-color: #764ba2;
+                background: #f0f0f0;
+            }
+
+            .upload-area.dragover {
+                border-color: #764ba2;
+                background: #e8e8e8;
+            }
+
+            .upload-area.has-image {
+                border-color: #28a745;
+                background: #f0fff4;
+            }
+
+            .upload-area input[type='file'] {
+                display: none;
+            }
+
+            .upload-icon {
+                font-size: 4em;
+                margin-bottom: 20px;
+            }
+
+            .upload-text {
+                font-size: 1.2em;
+                color: #666;
+                margin-bottom: 10px;
+            }
+
+            .upload-hint {
+                font-size: 0.9em;
+                color: #999;
+            }
+
+            .image-preview-container {
+                margin-top: 20px;
+                position: relative;
+            }
+
+            .image-preview {
+                max-width: 100%;
+                max-height: 300px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            }
+
+            .remove-image {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: #dc3545;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 30px;
+                height: 30px;
+                cursor: pointer;
+                font-size: 18px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background 0.2s;
+            }
+
+            .remove-image:hover {
+                background: #c82333;
+            }
+
+            .btn {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 15px 40px;
+                font-size: 1.1em;
+                border-radius: 10px;
+                cursor: pointer;
+                transition:
+                    transform 0.2s,
+                    box-shadow 0.2s;
+                margin-top: 20px;
+                width: 100%;
+            }
+
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+            }
+
+            .btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+            .results {
+                margin-top: 40px;
+            }
+
+            .result-section {
+                margin-bottom: 30px;
+            }
+
+            .result-section h3 {
+                color: #667eea;
+                margin-bottom: 15px;
+                font-size: 1.3em;
+            }
+
+            .result-images {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .result-card {
+                background: #f8f9fa;
+                border-radius: 15px;
+                padding: 20px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
+            }
+
+            .result-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 20px;
+                padding: 15px;
+                background: white;
+                border-radius: 10px;
+                margin-bottom: 15px;
+                transition: box-shadow 0.2s;
+            }
+
+            .result-item:hover {
+                box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+            }
+
+            .result-item-image {
+                flex-shrink: 0;
+                width: 250px;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .result-item-image img {
+                width: 100%;
+                height: 250px;
+                object-fit: cover;
+                border-radius: 10px;
+                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+                cursor: pointer;
+                transition: transform 0.2s;
+            }
+
+            .result-item-image img:hover {
+                transform: scale(1.05);
+            }
+
+            .result-item-prompt {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                max-height: 300px;
+                overflow-y: auto;
+                padding-right: 10px;
+            }
+
+            .result-item-prompt::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .result-item-prompt::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 10px;
+            }
+
+            .result-item-prompt::-webkit-scrollbar-thumb {
+                background: #667eea;
+                border-radius: 10px;
+            }
+
+            .result-item-prompt::-webkit-scrollbar-thumb:hover {
+                background: #5568d3;
+            }
+
+            .result-item-prompt p {
+                color: #666;
+                font-style: italic;
+                margin: 0;
+                margin-bottom: 10px;
+                line-height: 1.5;
+            }
+
+            .result-item-prompt p:last-child {
+                margin-bottom: 0;
+            }
+
+            .edit-button {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 8px 12px;
+                font-size: 0.85em;
+                border-radius: 8px;
+                cursor: pointer;
+                transition:
+                    transform 0.2s,
+                    box-shadow 0.2s;
+                margin-top: 10px;
+                width: 48%;
+                margin-right: 2%;
+            }
+
+            .video-button {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 8px 12px;
+                font-size: 0.85em;
+                border-radius: 8px;
+                cursor: pointer;
+                transition:
+                    transform 0.2s,
+                    box-shadow 0.2s;
+                margin-top: 10px;
+                width: 48%;
+            }
+
+            .edit-button:hover,
+            .video-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            }
+
+            .edit-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            }
+
+            .edit-button:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+            .result-item-video {
+                flex-shrink: 0;
+                width: 250px;
+                margin-right: 20px;
+            }
+
+            .result-item-video video {
+                width: 100%;
+                height: 250px;
+                object-fit: cover;
+                border-radius: 10px;
+                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+            }
+
+            .edit-modal {
+                display: none;
+                position: fixed;
+                z-index: 1001;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.9);
+                animation: fadeIn 0.3s;
+            }
+
+            .edit-modal.show {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .edit-modal-content {
+                background: white;
+                padding: 30px;
+                border-radius: 15px;
+                max-width: 600px;
+                width: 90%;
+                max-height: 90vh;
+                overflow-y: auto;
+                position: relative;
+                animation: zoomIn 0.3s;
+            }
+
+            .edit-modal-content h2 {
+                color: #667eea;
+                margin-bottom: 20px;
+            }
+
+            .edit-modal-content label {
+                display: block;
+                color: #666;
+                margin-bottom: 8px;
+                font-weight: 500;
+            }
+
+            .edit-modal-prompt {
+                width: 100%;
+                min-height: 100px;
+                padding: 15px;
+                font-size: 1em;
+                border: 2px solid #ddd;
+                border-radius: 10px;
+                font-family: inherit;
+                resize: vertical;
+                margin-bottom: 20px;
+            }
+
+            .edit-modal-prompt:focus {
+                outline: none;
+                border-color: #667eea;
+            }
+
+            .edit-modal-buttons {
+                display: flex;
+                gap: 10px;
+                justify-content: flex-end;
+            }
+
+            .edit-modal-close {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                color: #999;
+                font-size: 30px;
+                font-weight: bold;
+                cursor: pointer;
+                background: none;
+                border: none;
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: background 0.2s;
+            }
+
+            .edit-modal-close:hover {
+                background: #f0f0f0;
+            }
+
+            .result-card img {
+                width: 100%;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            }
+
+            .result-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr 0.7fr;
+                gap: 15px;
+                padding: 20px;
+                align-items: start;
+            }
+
+            .result-grid-item {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .result-grid-item h4 {
+                margin-bottom: 10px;
+                color: #667eea;
+                font-size: 1em;
+                text-align: center;
+            }
+
+            .result-grid-item img {
+                width: 100%;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+                object-fit: contain;
+                height: auto;
+                cursor: pointer;
+                transition: transform 0.2s;
+            }
+
+            .result-grid-item img:hover {
+                transform: scale(1.05);
+            }
+
+            .result-grid-item:last-child img {
+                width: auto;
+                margin: 0 auto;
+                object-fit: contain;
+                height: auto;
+            }
+
+            /* Modal Styles */
+            .modal {
+                display: none;
+                position: fixed;
+                z-index: 1000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.9);
+                animation: fadeIn 0.3s;
+            }
+
+            .modal.show {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+
+            .modal-content {
+                position: relative;
+                max-width: 90%;
+                max-height: 90%;
+                margin: auto;
+                animation: zoomIn 0.3s;
+            }
+
+            @keyframes zoomIn {
+                from {
+                    transform: scale(0.8);
+                    opacity: 0;
+                }
+                to {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+
+            .modal-content img {
+                width: 100%;
+                height: auto;
+                max-height: 90vh;
+                object-fit: contain;
+                border-radius: 10px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            }
+
+            .modal-content video {
+                width: 100%;
+                max-height: 90vh;
+                border-radius: 10px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            }
+
+            .modal-close {
+                position: absolute;
+                top: -40px;
+                right: 0;
+                color: #fff;
+                font-size: 40px;
+                font-weight: bold;
+                cursor: pointer;
+                background: rgba(0, 0, 0, 0.5);
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background 0.2s;
+            }
+
+            .modal-close:hover {
+                background: rgba(0, 0, 0, 0.8);
+            }
+
+            @media (max-width: 768px) {
+                .result-item {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+
+                .result-item-image {
+                    width: 100%;
+                    height: 200px;
+                }
+
+                .result-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .input-section {
+                margin-bottom: 30px;
+            }
+
+            .prompt-input {
+                width: 100%;
+                min-height: 120px;
+                padding: 15px;
+                font-size: 1.1em;
+                border: 3px solid #667eea;
+                border-radius: 15px;
+                font-family: inherit;
+                resize: vertical;
+                transition: border-color 0.3s ease;
+            }
+
+            .prompt-input:focus {
+                outline: none;
+                border-color: #764ba2;
+            }
+
+            .prompt-label {
+                display: block;
+                color: #667eea;
+                margin-bottom: 15px;
+                font-size: 1.2em;
+                font-weight: 600;
+            }
+
+            .options-section {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                margin-top: 20px;
+            }
+
+            .option-group {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .option-label {
+                color: #666;
+                margin-bottom: 8px;
+                font-size: 0.9em;
+                font-weight: 500;
+            }
+
+            .option-select {
+                padding: 10px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                font-size: 1em;
+                font-family: inherit;
+                background: white;
+                cursor: pointer;
+                transition: border-color 0.3s ease;
+            }
+
+            .option-select:focus {
+                outline: none;
+                border-color: #667eea;
+            }
+
+            .loading {
+                text-align: center;
+                padding: 40px;
+                color: #667eea;
+            }
+
+            .spinner {
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #667eea;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1s linear infinite;
+                margin: 20px auto;
+            }
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .error {
+                background: #fee;
+                color: #c33;
+                padding: 15px;
+                border-radius: 10px;
+                margin-top: 20px;
+                border-left: 4px solid #c33;
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            .status {
+                text-align: center;
+                padding: 20px;
+                color: #666;
+                font-size: 1.1em;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🎨 Image & Video Generation</h1>
+                <p>Generate images and videos from text prompts using Vertex AI Imagen and Veo</p>
+            </div>
+
+            <div class="content">
+                <div class="input-section">
+                    <label class="prompt-label" for="promptInput">✨ Enter your prompt</label>
+                    <textarea
+                        id="promptInput"
+                        class="prompt-input"
+                        placeholder="Describe the image you want to generate... (e.g., 'A serene mountain landscape at sunset with a lake reflecting the colors')"
+                    ></textarea>
+                </div>
+
+                <div style="text-align: center">
+                    <button class="btn" id="generateBtn" disabled>Generate Image</button>
+                </div>
+
+                <div id="status" class="status hidden"></div>
+                <div id="error" class="error hidden"></div>
+                <div id="loading" class="loading hidden">
+                    <div class="spinner"></div>
+                    <p>Generating image... This may take a minute.</p>
+                </div>
+
+                <div id="results" class="results hidden">
+                    <div class="result-section">
+                        <h3>✨ Generated Images & Videos</h3>
+                        <div class="result-images" id="resultImages"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for full-size image -->
+        <div id="imageModal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close">&times;</span>
+                <img id="modalImage" src="" alt="Full size image" />
+            </div>
+        </div>
+
+        <!-- Modal for full-size video -->
+        <div id="videoModalView" class="modal">
+            <div class="modal-content">
+                <span class="modal-close" id="videoModalClose">&times;</span>
+                <video
+                    id="modalVideo"
+                    controls
+                    style="width: 100%; max-height: 90vh; border-radius: 10px"
+                >
+                    <source id="modalVideoSource" src="" type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+
+        <!-- Modal for generating video -->
+        <div id="videoModal" class="edit-modal">
+            <div class="edit-modal-content">
+                <button class="edit-modal-close">&times;</button>
+                <h2>🎬 Generate Video</h2>
+                <label for="videoPromptInput">Enter video prompt:</label>
+                <textarea
+                    id="videoPromptInput"
+                    class="edit-modal-prompt"
+                    placeholder="Describe the video you want to generate from this image... (e.g., 'The scene comes to life with gentle movement', 'Add a slow zoom effect', 'Animate the clouds moving')"
+                ></textarea>
+                <div class="edit-modal-buttons">
+                    <button
+                        class="btn"
+                        id="cancelVideoBtn"
+                        style="background: #6c757d; width: auto; margin: 0"
+                    >
+                        Cancel
+                    </button>
+                    <button class="btn" id="confirmVideoBtn" style="width: auto; margin: 0">
+                        🎬 Generate Video
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for editing image -->
+        <div id="editModal" class="edit-modal">
+            <div class="edit-modal-content">
+                <button class="edit-modal-close">&times;</button>
+                <h2>✏️ Edit Image</h2>
+                <label for="editPromptInput">Enter edit prompt:</label>
+                <textarea
+                    id="editPromptInput"
+                    class="edit-modal-prompt"
+                    placeholder="Describe how you want to modify the image... (e.g., 'Add a sunset in the background', 'Change the color to blue', 'Remove the person')"
+                ></textarea>
+                <div class="edit-modal-buttons">
+                    <button
+                        class="btn"
+                        id="cancelEditBtn"
+                        style="background: #6c757d; width: auto; margin: 0"
+                    >
+                        Cancel
+                    </button>
+                    <button class="btn" id="confirmEditBtn" style="width: auto; margin: 0">
+                        💾 Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // ============================================================================
+            // Constants & Configuration
+            // ============================================================================
+            const API = {
+                GENERATE_IMAGE: '/api/generate-image',
+                EDIT_IMAGE: '/api/edit-image',
+                GENERATE_VIDEO: '/api/generate-video',
+                RESULTS: '/api/results',
+            };
+
+            // ============================================================================
+            // Utility Functions
+            // ============================================================================
+            const urlUtils = {
+                // Add cache-busting parameter to image URLs to force browser refresh
+                addCacheBuster(url) {
+                    const separator = url.includes('?') ? '&' : '?';
+                    return `${url}${separator}v=${Date.now()}`;
+                },
+
+                // Extract generation ID from image URL (e.g., /outputs/result-1234567890.png -> 1234567890)
+                // Also handles video files: /outputs/result-1234567890-video.mp4 -> 1234567890
+                extractGenerationId(url) {
+                    // Match result-{id} or result-{id}-{suffix} patterns
+                    // Examples: result-123.png, result-123-video.mp4, result-123-0.png
+                    const match = url.match(/result-(\d+)(?:-.*)?\./);
+                    return match ? parseInt(match[1], 10) : null;
+                },
+
+                // Get video URL for a given generation ID
+                getVideoUrl(generationId) {
+                    return `/outputs/result-${generationId}-video.mp4`;
+                },
+            };
+
+            // ============================================================================
+            // DOM Elements
+            // ============================================================================
+            const elements = {
+                promptInput: document.getElementById('promptInput'),
+                generateBtn: document.getElementById('generateBtn'),
+                resultsDiv: document.getElementById('results'),
+                resultImagesDiv: document.getElementById('resultImages'),
+                loadingDiv: document.getElementById('loading'),
+                errorDiv: document.getElementById('error'),
+                statusDiv: document.getElementById('status'),
+                imageModal: document.getElementById('imageModal'),
+                modalImage: document.getElementById('modalImage'),
+                modalClose: document.querySelector('#imageModal .modal-close'),
+                videoModalView: document.getElementById('videoModalView'),
+                modalVideo: document.getElementById('modalVideo'),
+                modalVideoSource: document.getElementById('modalVideoSource'),
+                videoModalClose: document.getElementById('videoModalClose'),
+                editModal: document.getElementById('editModal'),
+                editModalClose: document.querySelector('#editModal .edit-modal-close'),
+                editPromptInput: document.getElementById('editPromptInput'),
+                confirmEditBtn: document.getElementById('confirmEditBtn'),
+                cancelEditBtn: document.getElementById('cancelEditBtn'),
+                videoModal: document.getElementById('videoModal'),
+                videoPromptInput: document.getElementById('videoPromptInput'),
+                confirmVideoBtn: document.getElementById('confirmVideoBtn'),
+                cancelVideoBtn: document.getElementById('cancelVideoBtn'),
+            };
+
+            // ============================================================================
+            // State Management
+            // ============================================================================
+            const state = {
+                prompt: '',
+                selectedImageForEdit: null,
+                selectedImageForVideo: null,
+            };
+
+            // ============================================================================
+            // Utility Functions
+            // ============================================================================
+            const utils = {
+                escapeHtml(text) {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                },
+            };
+
+            // ============================================================================
+            // UI Management
+            // ============================================================================
+            const ui = {
+                showError(message) {
+                    elements.errorDiv.textContent = message;
+                    elements.errorDiv.classList.remove('hidden');
+                },
+
+                hideError() {
+                    elements.errorDiv.classList.add('hidden');
+                },
+
+                showLoading(message = 'Processing...') {
+                    elements.loadingDiv.classList.remove('hidden');
+                    elements.statusDiv.classList.remove('hidden');
+                    elements.statusDiv.textContent = message;
+                },
+
+                hideLoading() {
+                    elements.loadingDiv.classList.add('hidden');
+                    elements.statusDiv.classList.add('hidden');
+                },
+
+                updateGenerateButton() {
+                    const hasPrompt = state.prompt.trim().length > 0;
+                    elements.generateBtn.disabled = !hasPrompt;
+                },
+            };
+
+            // ============================================================================
+            // Prompt Handling
+            // ============================================================================
+            const promptHandler = {
+                init() {
+                    elements.promptInput.addEventListener('input', () => {
+                        state.prompt = elements.promptInput.value;
+                        ui.updateGenerateButton();
+                    });
+
+                    // Allow Enter+Shift for new line, Enter alone submits
+                    elements.promptInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            if (!elements.generateBtn.disabled) {
+                                api.generateImage();
+                            }
+                        }
+                    });
+                },
+            };
+
+            // ============================================================================
+            // API & Data Management
+            // ============================================================================
+            const api = {
+                async generateImage() {
+                    if (!state.prompt.trim()) return;
+
+                    ui.hideError();
+                    ui.showLoading('Generating image...');
+                    elements.generateBtn.disabled = true;
+                    elements.resultsDiv.classList.add('hidden');
+
+                    const requestBody = {
+                        prompt: state.prompt.trim(),
+                        // Using defaults: sampleCount: 1, aspectRatio: '1:1', safetySetting: 'block_medium_and_above', personGeneration: 'allow_adult'
+                    };
+
+                    try {
+                        const response = await fetch(API.GENERATE_IMAGE, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(requestBody),
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Failed to generate image');
+                        }
+
+                        results.displayResults(data);
+                        // Clear prompt area after successful generation
+                        elements.promptInput.value = '';
+                        state.prompt = '';
+                        ui.hideLoading();
+                    } catch (error) {
+                        ui.showError(error.message || 'An error occurred while generating image');
+                        ui.hideLoading();
+                    } finally {
+                        elements.generateBtn.disabled = false;
+                    }
+                },
+
+                async loadAllResults() {
+                    try {
+                        const response = await fetch(API.RESULTS);
+                        if (!response.ok) {
+                            throw new Error('Failed to load results');
+                        }
+                        const data = await response.json();
+
+                        if (data.results && data.results.length > 0) {
+                            results.displayAllResults(data.results);
+                            elements.resultsDiv.classList.remove('hidden');
+                        } else {
+                            elements.resultsDiv.classList.add('hidden');
+                        }
+                    } catch (error) {
+                        console.error('Error loading results:', error);
+                    }
+                },
+
+                async editImage(imagePath, editPrompt) {
+                    ui.hideError();
+                    ui.showLoading('Processing edit and saving changes...');
+                    elements.confirmEditBtn.disabled = true;
+                    elements.confirmEditBtn.textContent = '💾 Saving...';
+
+                    try {
+                        const response = await fetch(API.EDIT_IMAGE, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                imagePath: imagePath,
+                                editPrompt: editPrompt,
+                                sampleCount: 1,
+                            }),
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Failed to edit image');
+                        }
+
+                        // Close the edit modal immediately
+                        editModal.close();
+
+                        // Show loading while refreshing
+                        ui.showLoading('Updating image...');
+
+                        // Reload all results to show the updated image
+                        await api.loadAllResults();
+
+                        // Ensure results section is visible
+                        elements.resultsDiv.classList.remove('hidden');
+
+                        // Hide loading
+                        ui.hideLoading();
+                    } catch (error) {
+                        ui.showError(error.message || 'An error occurred while editing image');
+                        ui.hideLoading();
+                    } finally {
+                        elements.confirmEditBtn.disabled = false;
+                        elements.confirmEditBtn.textContent = '💾 Save Changes';
+                    }
+                },
+
+                async generateVideo(imagePath, videoPrompt) {
+                    ui.hideError();
+                    ui.showLoading('Generating video... This may take several minutes.');
+                    elements.confirmVideoBtn.disabled = true;
+                    elements.confirmVideoBtn.textContent = '🎬 Generating...';
+
+                    try {
+                        const response = await fetch(API.GENERATE_VIDEO, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                imagePath: imagePath,
+                                prompt: videoPrompt,
+                                aspectRatio: '16:9',
+                                duration: 8, // Default 8 seconds for Veo 3 models image-to-video (supported: 4, 6, or 8)
+                            }),
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Failed to generate video');
+                        }
+
+                        // Close the video modal immediately
+                        videoModal.close();
+
+                        // Show loading while refreshing
+                        ui.showLoading('Updating results...');
+
+                        // Reload all results to show the generated video
+                        await api.loadAllResults();
+
+                        // Ensure results section is visible
+                        elements.resultsDiv.classList.remove('hidden');
+
+                        // Hide loading
+                        ui.hideLoading();
+                    } catch (error) {
+                        ui.showError(error.message || 'An error occurred while generating video');
+                        ui.hideLoading();
+                    } finally {
+                        elements.confirmVideoBtn.disabled = false;
+                        elements.confirmVideoBtn.textContent = '🎬 Generate Video';
+                    }
+                },
+            };
+
+            // ============================================================================
+            // Results Display
+            // ============================================================================
+            const results = {
+                renderPrompts(prompts, videoPrompts) {
+                    let html = '';
+
+                    // Display image prompts (original + edits)
+                    if (prompts && prompts.length > 0) {
+                        html += prompts
+                            .map(
+                                (prompt, promptIndex) => `
+                            <p>
+                                ${promptIndex === 0 ? '<strong style="color: #667eea;">🖼️ Original Image:</strong> ' : `<strong style="color: #667eea;">✏️ Image Edit ${promptIndex}:</strong> `}
+                                ${utils.escapeHtml(prompt)}
+                            </p>
+                        `
+                            )
+                            .join('');
+                    }
+
+                    // Display video prompts
+                    if (videoPrompts && videoPrompts.length > 0) {
+                        html += videoPrompts
+                            .map(
+                                (prompt, promptIndex) => `
+                            <p>
+                                <strong style="color: #f5576c;">🎬 Video ${promptIndex + 1}:</strong> ${utils.escapeHtml(prompt)}
+                            </p>
+                        `
+                            )
+                            .join('');
+                    }
+
+                    return html;
+                },
+
+                displayResults(data) {
+                    if (!data.resultImages || data.resultImages.length === 0) {
+                        ui.showError('No results generated');
+                        return;
+                    }
+                    // Show results immediately and then reload all results
+                    elements.resultsDiv.classList.remove('hidden');
+                    api.loadAllResults();
+                },
+
+                displayAllResults(resultsArray) {
+                    // Only clear and update if we have results
+                    if (resultsArray && resultsArray.length > 0) {
+                        // Debug: log results to see video data
+                        console.log('Displaying results:', resultsArray);
+                        resultsArray.forEach((result, idx) => {
+                            console.log(`Result ${idx}:`, {
+                                id: result.id,
+                                hasVideos: !!result.resultVideos,
+                                videos: result.resultVideos,
+                                videoCount: result.resultVideos?.length || 0,
+                                images: result.resultImages,
+                            });
+                        });
+
+                        // Create new content first
+                        const newContent = resultsArray
+                            .map(
+                                (result) => `
+                        <div class="result-card">
+                            ${result.resultImages
+                                .map((imgUrl, index) => {
+                                    // Extract generation ID from image URL to find associated video
+                                    const generationId = urlUtils.extractGenerationId(imgUrl);
+
+                                    // Only show video if it actually exists in resultVideos array (which is populated from filesystem)
+                                    let videoUrl = null;
+                                    if (
+                                        index === 0 &&
+                                        generationId &&
+                                        result.resultVideos &&
+                                        result.resultVideos.length > 0
+                                    ) {
+                                        // Backend returns videos as /outputs/result-{id}-video.mp4
+                                        const videoPattern = `result-${generationId}-video.mp4`;
+                                        const foundVideo = result.resultVideos.find((v) => {
+                                            return (
+                                                v &&
+                                                typeof v === 'string' &&
+                                                v.includes(videoPattern)
+                                            );
+                                        });
+                                        if (foundVideo) {
+                                            videoUrl = foundVideo;
+                                        }
+                                    }
+
+                                    return `
+                                <div class="result-item">
+                                    <div class="result-item-image">
+                                        <img src="${utils.escapeHtml(urlUtils.addCacheBuster(imgUrl))}" alt="Generated Image ${index + 1}" class="result-image-clickable" data-image-url="${utils.escapeHtml(imgUrl)}">
+                                        <div style="display: flex; gap: 4px; margin-top: 10px;">
+                                            <button class="edit-button" data-image-url="${utils.escapeHtml(imgUrl)}" onclick="app.openEditModal('${utils.escapeHtml(imgUrl)}')">
+                                                ✏️ Edit Image
+                                            </button>
+                                            <button class="video-button" data-image-url="${utils.escapeHtml(imgUrl)}" onclick="app.openVideoModal('${utils.escapeHtml(imgUrl)}')">
+                                                🎬 Generate Video
+                                            </button>
+                                        </div>
+                                    </div>
+                                    ${
+                                        videoUrl
+                                            ? `
+                                        <div class="result-item-video">
+                                            <video controls style="width: 100%; height: 250px; object-fit: cover;">
+                                                <source src="${utils.escapeHtml(urlUtils.addCacheBuster(videoUrl))}" type="video/mp4">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                            <button class="show-video-button" onclick="app.openVideoViewModal('${utils.escapeHtml(videoUrl)}')" style="margin-top: 16px; width: 100%; height: 48px; padding: 8px 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85em;">
+                                                🎥 Show Video
+                                            </button>
+                                        </div>
+                                    `
+                                            : ''
+                                    }
+                                    ${
+                                        index === 0
+                                            ? `
+                                    <div class="result-item-prompt">
+                                        ${results.renderPrompts(
+                                            result.prompts ||
+                                                (result.prompt
+                                                    ? [result.prompt]
+                                                    : ['Generated image']),
+                                            result.videoPrompts || []
+                                        )}
+                                    </div>
+                                    `
+                                            : ''
+                                    }
+                                </div>
+                            `;
+                                })
+                                .join('')}
+                        </div>
+                    `
+                            )
+                            .join('');
+
+                        // Update DOM in one operation to minimize flicker
+                        elements.resultImagesDiv.innerHTML = newContent;
+
+                        // Add click handlers to all images
+                        results.attachImageClickHandlers();
+                    }
+                },
+
+                attachImageClickHandlers() {
+                    const clickableImages =
+                        elements.resultImagesDiv.querySelectorAll('.result-image-clickable');
+                    clickableImages.forEach((img) => {
+                        img.addEventListener('click', () => {
+                            const imageUrl = img.getAttribute('data-image-url');
+                            modal.open(imageUrl);
+                        });
+                    });
+                },
+            };
+
+            // ============================================================================
+            // Modal Management
+            // ============================================================================
+            const modal = {
+                open(imageUrl) {
+                    elements.modalImage.src = urlUtils.addCacheBuster(imageUrl);
+                    elements.imageModal.classList.add('show');
+                    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                },
+
+                close() {
+                    elements.imageModal.classList.remove('show');
+                    document.body.style.overflow = ''; // Restore scrolling
+                },
+
+                openVideo(videoUrl) {
+                    elements.modalVideoSource.src = urlUtils.addCacheBuster(videoUrl);
+                    elements.modalVideo.load(); // Reload video with new source
+                    elements.videoModalView.classList.add('show');
+                    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                },
+
+                closeVideo() {
+                    elements.videoModalView.classList.remove('show');
+                    elements.modalVideo.pause(); // Pause video when closing
+                    document.body.style.overflow = ''; // Restore scrolling
+                },
+
+                init() {
+                    // Close on X button click (image modal)
+                    if (elements.modalClose) {
+                        elements.modalClose.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            modal.close();
+                        });
+                    }
+
+                    // Close video modal on X button click
+                    if (elements.videoModalClose) {
+                        elements.videoModalClose.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            modal.closeVideo();
+                        });
+                    }
+
+                    // Close on background click
+                    if (elements.imageModal) {
+                        elements.imageModal.addEventListener('click', (e) => {
+                            if (e.target === elements.imageModal) {
+                                modal.close();
+                            }
+                        });
+                    }
+
+                    // Close video modal on background click
+                    if (elements.videoModalView) {
+                        elements.videoModalView.addEventListener('click', (e) => {
+                            if (e.target === elements.videoModalView) {
+                                modal.closeVideo();
+                            }
+                        });
+                    }
+
+                    // Close on ESC key
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape') {
+                            if (
+                                elements.imageModal &&
+                                elements.imageModal.classList.contains('show')
+                            ) {
+                                modal.close();
+                            }
+                            if (
+                                elements.videoModalView &&
+                                elements.videoModalView.classList.contains('show')
+                            ) {
+                                modal.closeVideo();
+                            }
+                        }
+                    });
+                },
+            };
+
+            // ============================================================================
+            // Video Modal Management
+            // ============================================================================
+            const videoModal = {
+                open(imageUrl) {
+                    state.selectedImageForVideo = imageUrl;
+                    elements.videoPromptInput.value = '';
+                    elements.confirmVideoBtn.disabled = false;
+                    elements.confirmVideoBtn.textContent = '🎬 Generate Video';
+                    elements.videoModal.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                },
+
+                close() {
+                    elements.videoModal.classList.remove('show');
+                    document.body.style.overflow = '';
+                    state.selectedImageForVideo = null;
+                    elements.videoPromptInput.value = '';
+                    elements.confirmVideoBtn.disabled = false;
+                    elements.confirmVideoBtn.textContent = '🎬 Generate Video';
+                },
+
+                init() {
+                    const videoModalClose = elements.videoModal?.querySelector('.edit-modal-close');
+                    if (videoModalClose) {
+                        videoModalClose.addEventListener('click', () => {
+                            videoModal.close();
+                        });
+                    }
+
+                    if (elements.cancelVideoBtn) {
+                        elements.cancelVideoBtn.addEventListener('click', () => {
+                            videoModal.close();
+                        });
+                    }
+
+                    if (elements.confirmVideoBtn) {
+                        elements.confirmVideoBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            const videoPrompt = elements.videoPromptInput.value.trim();
+                            if (!videoPrompt) {
+                                ui.showError('Please enter a video prompt');
+                                return;
+                            }
+                            if (!state.selectedImageForVideo) {
+                                ui.showError('No image selected for video generation');
+                                return;
+                            }
+                            api.generateVideo(state.selectedImageForVideo, videoPrompt);
+                        });
+                    }
+
+                    // Close on background click
+                    if (elements.videoModal) {
+                        elements.videoModal.addEventListener('click', (e) => {
+                            if (e.target === elements.videoModal) {
+                                videoModal.close();
+                            }
+                        });
+                    }
+
+                    // Close on ESC key
+                    document.addEventListener('keydown', (e) => {
+                        if (
+                            e.key === 'Escape' &&
+                            elements.videoModal &&
+                            elements.videoModal.classList.contains('show')
+                        ) {
+                            videoModal.close();
+                        }
+                    });
+                },
+            };
+
+            // ============================================================================
+            // Edit Modal Management
+            // ============================================================================
+            const editModal = {
+                open(imageUrl) {
+                    state.selectedImageForEdit = imageUrl;
+                    elements.editPromptInput.value = '';
+                    elements.confirmEditBtn.disabled = false;
+                    elements.confirmEditBtn.textContent = '💾 Save Changes';
+                    elements.editModal.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                },
+
+                close() {
+                    elements.editModal.classList.remove('show');
+                    document.body.style.overflow = '';
+                    state.selectedImageForEdit = null;
+                    elements.editPromptInput.value = '';
+                    elements.confirmEditBtn.disabled = false;
+                    elements.confirmEditBtn.textContent = '💾 Save Changes';
+                },
+
+                init() {
+                    if (elements.editModalClose) {
+                        elements.editModalClose.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            editModal.close();
+                        });
+                    }
+
+                    if (elements.cancelEditBtn) {
+                        elements.cancelEditBtn.addEventListener('click', () => {
+                            editModal.close();
+                        });
+                    }
+
+                    if (elements.confirmEditBtn) {
+                        elements.confirmEditBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            const editPrompt = elements.editPromptInput.value.trim();
+                            if (!editPrompt) {
+                                ui.showError('Please enter an edit prompt');
+                                return;
+                            }
+                            if (!state.selectedImageForEdit) {
+                                ui.showError('No image selected for editing');
+                                return;
+                            }
+                            api.editImage(state.selectedImageForEdit, editPrompt);
+                        });
+                    } else {
+                        console.error('confirmEditBtn element not found');
+                    }
+
+                    // Close on background click
+                    if (elements.editModal) {
+                        elements.editModal.addEventListener('click', (e) => {
+                            if (e.target === elements.editModal) {
+                                editModal.close();
+                            }
+                        });
+                    }
+
+                    // Close on ESC key
+                    document.addEventListener('keydown', (e) => {
+                        if (
+                            e.key === 'Escape' &&
+                            elements.editModal &&
+                            elements.editModal.classList.contains('show')
+                        ) {
+                            editModal.close();
+                        }
+                    });
+                },
+            };
+
+            // ============================================================================
+            // Application Initialization
+            // ============================================================================
+            const app = {
+                init() {
+                    promptHandler.init();
+                    elements.generateBtn.addEventListener('click', api.generateImage);
+                    modal.init();
+                    editModal.init();
+                    videoModal.init();
+                    api.loadAllResults();
+                },
+
+                openEditModal(imageUrl) {
+                    editModal.open(imageUrl);
+                },
+
+                openVideoModal(imageUrl) {
+                    videoModal.open(imageUrl);
+                },
+
+                openVideoViewModal(videoUrl) {
+                    modal.openVideo(videoUrl);
+                },
+
+                saveEdit() {
+                    const editPrompt = elements.editPromptInput?.value.trim();
+                    if (!editPrompt) {
+                        ui.showError('Please enter an edit prompt');
+                        return;
+                    }
+                    if (!state.selectedImageForEdit) {
+                        ui.showError('No image selected for editing');
+                        return;
+                    }
+                    api.editImage(state.selectedImageForEdit, editPrompt);
+                },
+
+                saveVideo() {
+                    const videoPrompt = elements.videoPromptInput?.value.trim();
+                    if (!videoPrompt) {
+                        ui.showError('Please enter a video prompt');
+                        return;
+                    }
+                    if (!state.selectedImageForVideo) {
+                        ui.showError('No image selected for video generation');
+                        return;
+                    }
+                    api.generateVideo(state.selectedImageForVideo, videoPrompt);
+                },
+            };
+
+            // Make saveEdit available globally for onclick handler
+            window.app = app;
+
+            // Start application
+            app.init();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,18 @@
+node_modules/
+dist/
+*.log
+.env
+.DS_Store
+*-key.json
+*service-account*.json
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!.vscode/settings.json
+
+# Allow uploads and outputs folders to be tracked
+!uploads/
+!outputs/
+!texts/
+
